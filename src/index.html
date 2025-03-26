@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log Viewer</title>
+  <style>
+    body {
+      font-family: monospace;
+      background-color: black;
+      color: white;
+    }
+
+    details {
+      margin-bottom: 10px;
+    }
+
+    summary {
+      white-space: pre-wrap;
+      /* Wrap text */
+      cursor: pointer;
+      color: white;
+    }
+
+    p {
+      white-space: pre-wrap;
+      /* Wrap text */
+      color: white;
+    }
+
+    .error {
+      border: 2px solid magenta;
+    }
+
+    .warn {
+      border: 2px solid yellow;
+    }
+
+    .info {
+      border: 2px solid cyan;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Log Viewer</h1>
+  <div id="log-container"></div>
+
+  <script>
+    function renderLog(log) {
+      const logContainer = document.getElementById('log-container');
+
+      const details = document.createElement('details');
+      const summary = document.createElement('summary');
+      const p = document.createElement('p');
+
+      const date = new Date(log.time * 1000);
+      const formattedTime = date.toISOString().substr(11, 12); // HH:MM:SS.mmm
+
+      summary.textContent = `${formattedTime} - ${log.msg}`;
+      p.textContent = JSON.stringify(log, null, 2);
+
+      details.classList.add(log.type);
+      details.appendChild(summary);
+      details.appendChild(p);
+      logContainer.appendChild(details);
+    }
+
+    function connectWebSocket() {
+      const ws = new WebSocket('ws://127.0.0.1:3030/ws');
+
+      ws.onmessage = (event) => {
+        const log = JSON.parse(event.data);
+        renderLog(log);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket closed, reconnecting...');
+        setTimeout(connectWebSocket, 1000);
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        ws.close();
+      };
+    }
+
+    connectWebSocket();
+  </script>
+</body>
+
+</html>
