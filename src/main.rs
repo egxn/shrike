@@ -6,8 +6,8 @@ use std::io::{BufRead, BufReader};
 use std::thread;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::sync::broadcast;
+use warp::{cors, Filter};
 use warp::ws::{Message, WebSocket};
-use warp::Filter;
 
 fn get_type(message: &str) -> &str {
   if message.to_lowercase().contains("warn") {
@@ -143,7 +143,12 @@ async fn main() {
 
   let index_route = warp::path::end().and(warp::fs::file("src/index.html"));
 
-  let routes = ws_route.or(index_route);
+  let cors = cors()
+    .allow_any_origin()
+    .allow_header("content-type")
+    .allow_methods(vec!["GET", "POST"]);
 
+  let routes = ws_route.or(index_route).with(cors);
+ 
   warp::serve(routes).run(([127, 0, 0, 1], 1312)).await;
 }
